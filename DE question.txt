@@ -1,0 +1,253 @@
+								Data Engineering Question & Answers
+							      ---------------------------------------
+
+Q1- Given the Employee table below, Write a SQL query to fetch the count of
+employees by department with counts sorted in descending order.
+
+Ans1- 	
+
+select department, count(*) AS employee_count
+from Employee
+group by department
+order by employee_count desc;
+
+
+---------------------------------------------------------------------------------------------------------------------------
+
+Q2- Write a SQL query that returns the Department Names along with the unit price amount of the
+most expensive product sold in each respective department.
+
+
+Ans2- 
+
+select d.DepartmentName, rp.UnitPrice
+from (
+  select p.*, row_number() over (partition by DepartmentID order by UnitPrice desc) AS rn
+  from Product p
+) AS ranked_products rp
+join Department d on rp.DepartmentID = d.ID
+where rp.rn = 1;
+
+
+---------------------------------------------------------------------------------------------------------------------------
+
+Q3- Write a simple block of Python code that (a) reads the input file (and all of its transactions) and
+(b) calculates the average transaction amount across all records.
+
+Ans3- 
+
+1st approach
+---------------------------
+import pandas as pd
+
+# Reading the CSV file into a DataFrame
+df = pd.read_csv('/data/transactions.csv')
+
+# Calculating the average transaction amount
+average_transaction_amount = df['TransactionAmount'].mean()
+
+# Print the result
+print(f"The average transaction amount is: {average_transaction_amount:.2f}")
+
+		OR
+
+2nd approach
+---------------------------
+import csv
+
+# Initialize variables to store the sum of transactions and the count of transactions
+total_amount = 0
+transaction_count = 0
+
+# Reading the CSV file
+with open('/data/transactions.csv', mode='r') as file:
+    csv_reader = csv.DictReader(file)
+    
+    for row in csv_reader:
+        total_amount += float(row['TransactionAmount'])
+        transaction_count += 1
+
+# Calculating the average transaction amount
+if transaction_count > 0:
+    avg_transaction_amount = total_amount / transaction_count
+    print(f"The average transaction amount is: {avg_transaction_amount:.2f}")
+else:
+    print("No transactions found.")
+
+
+---------------------------------------------------------------------------------------------------------------------------
+
+Q4- Write a code snippet that generates the square of every element in the list lst in
+a pythonic way.
+lst = [1, 2, 3, 4]
+
+Ans4- 
+
+squar_lst = [i**2 for i in lst]
+print(squar_lst)
+
+
+---------------------------------------------------------------------------------------------------------------------------
+
+Q5- Given an integer array nums, write a Python function that returns True if the
+array has duplicates. Otherwise, the function should return False.
+
+Ans5- 
+
+def duplicates_found(nums):
+    # Create an empty set to store unique elements
+    unique_nums = set()
+    
+    for num in nums:
+        # If the element is already in the set, return True
+        if num in unique_nums:
+            return True
+        # Otherwise, add the element to the set
+        unique_nums.add(num)
+    
+    # If no duplicates are found, return False
+    return False
+
+
+print(duplicates_found(nums))
+
+
+---------------------------------------------------------------------------------------------------------------------------
+
+Q6- The Scala code provided below is meant to calculate the sum of squares of all the
+elements in a list. There are errors though. Fix the code so it compiles.
+
+
+Ans6- 
+
+def calcSumOfSquares(n: List[Int]): Int = {
+    var sum = 0
+    for (num <- n) {
+        val square = num * num
+        sum += square
+    }
+    sum
+}
+	
+
+---------------------------------------------------------------------------------------------------------------------------
+
+Q7- Bonus Question
+
+Ans7- 
+
+To design the ETL/ELT data pipeline as described, leveraging Google Cloud Platform (GCP) services for a well-optimized and cost-effective solution, here's an outline of the approach:
+
+Pipeline Design Overview - 
+
+1- Data Extraction - Using Google Cloud Storage (GCS) to store the CSV files from the legacy database. This can be achieved by setting up scheduled export jobs from the legacy database to GCS using tools like Cloud Storage Transfer Service or Dataflow.
+
+
+2- Data Transformation - 
+
+ Using Cloud Dataflow for scalable and serverless data processing. Dataflow allows for efficient handling of the 20-25 different payloads stored in CSV format. Within Dataflow, we can perform necessary transformations such as filtering, joining, and mapping data to the new output payloads. Leveraging Apache Beam SDK with Dataflow to write data transformation pipelines in languages like Python, which are supported by Dataflow. The Dataflow can scale automatically based on workload, minimizing operational overhead and reducing costs during idle periods.
+
+
+3- Data Loading - 
+
+Loading the transformed data into BigQuery database for downstream analytics and reporting. BigQuery is particularly suited for large-scale data warehousing and analytics due to its serverless and highly scalable nature. Bigquery scale automatically based on workload, minimizing operational overhead and reducing costs during idle periods.
+
+
+4- Data Archiving - 
+
+Archiving both the raw source data (CSV files) and the transformed output data in GCS. Partitioning the data by export date for efficient querying and management.
+
+
+
+Language and Tools - 
+
+Python, Apache Beam, Google Cloud Storage (GCS), Apache Beam, Google Bigquery, etc. 
+
+
+---------------------------------------------------------------------------------------------------------------------------
+
+Q8- Bonus Question
+
+Ans8- 
+
+Here is the query -
+
+with retailer_data as (
+    select id, retailerName
+    from tblRetailers
+    where retailerName = 'ABC Store'
+),
+filtered_data as (
+    select rbd.redemptionDate, rbd.redemptionCount
+    from tblRedemptions_ByDay rbd
+    join retailer_data rd
+    on rbd.retailerId = rd.id
+    where rbd.redemptionDate between '2023-10-30' and '2023-11-05'
+)
+
+select redemptionDate, max(redemptionCount) AS mostRecentRedemptionCount
+from filtered_data
+group by redemptionDate
+order by redemptionDate;
+
+
+Questions based on the dataset produced from the above query- 
+
+	Q1- Which date had the least number of redemptions and what was the redemption count?	
+	Ans1- 2023-11-02 had the least number of redemptions with a count of 2935.
+	      Here is the result query -
+
+		select redemptionDate, min(mostRecentRedemptionCount) as leastRedemptions
+		from (
+    			select redemptionDate, max(redemptionCount) as mostRecentRedemptionCount
+    			from tblRedemptions_ByDay rbd
+    			join tblRetailers rd
+    			on rbd.retailerId = rd.id
+    			where rd.retailerName = 'ABC Store' and rbd.redemptionDate between '2023-10-30' and '2023-11-05'
+    			group by redemptionDate
+		) as subquery
+		order by leastRedemptions
+		limit 1;
+	
+ 
+	Q2- Which date had the most number of redemptions and what was the redemption count?
+	Ans2- 2023-11-04 had the most number of redemptions with a count of 5224.
+	      Here is the result query - 
+	
+		select redemptionDate, max(mostRecentRedemptionCount) as mostRedemptions
+		from (
+    			select redemptionDate, max(redemptionCount) as mostRecentRedemptionCount
+    			from tblRedemptions_ByDay rbd
+    			join tblRetailers rd
+    			on rbd.retailerId = rd.id
+    			where rd.retailerName = 'ABC Store' and rbd.redemptionDate between '2023-10-30' and '2023-11-05'
+    			group by redemptionDate
+		) as subquery
+		order by mostRedemptions desc
+		limit 1;
+
+
+	Q3- What was the createDateTime for each redemptionCount in questions 1 and 2?
+	Ans3- For 2023-11-02, the createDateTime is 2023-11-05 11:00:00 UTC.
+	      For 2023-11-04, the createDateTime is 2023-11-05 11:00:00 UTC.
+
+	      Here is the result query - 
+	      
+	      select redemptionDate, redemptionCount, createDateTime
+	      from tblRedemptions_ByDay rbd
+	      join tblRetailers rd
+	      on rbd.retailerId = rd.id
+	      where rd.retailerName = 'ABC Store' and redemptionDate in ('2023-11-02', '2023-11-04')
+	      order by redemptionDate, redemptionCount desc;
+	
+
+	Q4- Is there another method you can use to pull back the most recent redemption count, by
+	redemption date, for the date range 2023-10-30 to 2023-11-05, for retailer "ABC Store"?
+	In words, describe how you would do this (no need to write a query, unless you’d like to).
+	Ans4- Yes, another method involves using a subquery to directly filter the most recent records based on the createDateTime. Here's how it could be 	      described:- 
+		1- Use a subquery to select the most recent createDateTime for each redemptionDate within the specified range.
+		2- Join this subquery with the original tblRedemptions_ByDay table to get the corresponding redemptionCount for these most recent entries.
+
+
+
+
